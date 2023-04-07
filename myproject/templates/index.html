@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vehicle Billing System</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #007bff;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 16px;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: #007bff;
+            color: #ffffff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: bold;
+            transition: opacity 0.3s ease;
+            font-size: 16px;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .expense {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 3px;
+            background-color: #d4edda;
+            color: #155724;
+            display: none;
+        }
+
+        .expense-msg {
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="data-table" style="display: none;">
+    <h2 style="text-align: center;">Booked Data</h2>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+        <tr id="header">
+            <th style="border: 1px solid #333; padding: 10px; text-align: left;">ID</th>
+            <th style="border: 1px solid #333; padding: 10px; text-align: left;">Hour</th>
+            <th style="border: 1px solid #333; padding: 10px; text-align: left;">Minute</th>
+            <th style="border: 1px solid #333; padding: 10px; text-align: left;">AM/PM</th>
+            <th style="border: 1px solid #333; padding: 10px; text-align: left;">Expense</th>
+        </tr>
+        <button id="back" class="btn" onclick="back()"><<Back/button>
+
+    </table>
+</div>
+    <div class="container" id="container">
+        <h1>VEHICLE BILLING SYSTEM</h1>
+        <div class="form-group">
+            <label for="hour">Hour:</label>
+            <input type="number" id="hour" min="1" max="12">
+        </div>
+        <div class="form-group">
+            <label for="minute">Minute:</label>
+            <input type="number" id="minute" min="0" max="59">
+        </div>
+        <div class="form-group">
+            <label for="am_pm">AM/PM:</label>
+            <select id="am_pm">
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <button id="submitBtn" class="btn" onclick="submitForm()">Submit</button>
+            <button type="button" id="seeMy" value="See My Booked Data" class="btn" style="background-color: green;" onclick="Booked()">See Your Data</button>
+            <button type="button" id="all"  value="See My Booked Data" class="btn" style="background-color: red;" onclick="Booked2()">See All Data</button>
+
+            <button onclick="cancel()" id="cancelBtn" class="btn" style="display:none;">Cancel</button>
+            <button id="printBtn" class="btn" style="display:none;background-color: forestgreen;">Continue</button>
+        </div>
+        <p id="expense-msg" class="expense-msg" style="display:none;"></p>
+
+    </div>
+
+            <script>
+
+            function submitForm() {
+                var hour = parseInt(document.getElementById("hour").value);
+                var minute = parseInt(document.getElementById("minute").value);
+                var am_pm = document.getElementById("am_pm").value;
+                if (isNaN(hour) || hour < 1 || hour > 12) {
+                  alert("Invalid hour input. Please enter a valid hour (1-12).");
+                  return;
+                }
+
+                if (isNaN(minute) || minute < 0 || minute > 59) {
+                  alert("Invalid minute input. Please enter a valid minute (0-59).");
+                  return;
+                }
+
+                if (am_pm !== "AM" && am_pm !== "PM") {
+                  alert("Invalid AM/PM input. Please select either AM or PM.");
+                  return;
+                }
+                else{
+                    $("#submitBtn").hide();
+                    var expense = calculateExpense(hour, minute, am_pm);
+                    // Set input field as readonly
+                    $("#hour").prop("disabled", true);
+                    $("#minute").prop("disabled", true);
+                    $("#am_pm").prop("disabled", true);
+
+                    document.getElementById("expense-msg").innerText = "Total Expense: ₹" + expense;
+                    document.getElementById("expense-msg").style.display = "block";
+                    document.getElementById("cancelBtn").style.display = "inline-block";
+                    document.getElementById("printBtn").style.display = "inline-block";
+                    document.getElementById("seeMy").style.display = "none";
+                    document.getElementById("all").style.display = "none";
+                    document.getElementById("submitBtn").style.display = "none";
+                }
+            }
+
+function calculateExpense(hour, minute, am_pm) {
+    var now = new Date();
+    var currentHour = now.getHours();
+    var currentMinute = now.getMinutes();
+    var currentAmPm = currentHour < 12 ? "AM" : "PM";
+    var nowhour = 0;
+    //lets take AM be our main time.so PM is 12hrs from now.
+    if (currentAmPm=="AM"){
+        nowhour=currentHour+(currentMinute/60);
+    }
+    if (currentAmPm=="PM"){
+
+        nowhour=currentHour+(currentMinute/60)+12;
+
+    }
+    var givenhour = 0;
+    if (am_pm=="AM"){
+        givenhour = hour + (minute/60);
+    }
+    if (am_pm=="PM"){
+
+        givenhour = hour + (minute/60) +12 ;
+    }
+    if (nowhour>givenhour){
+            givenhour+=24;
+
+
+    }
+
+    expense = givenhour - nowhour;
+    console.log(expense);
+    expense=expense*2;
+    expense=Math.ceil(expense);
+    
+    return expense;
+}
+
+
+            function Booked2() {
+    var myDiv = $('#container');
+
+    myDiv.fadeOut();
+
+    $.ajax({
+        url: "/getAll", 
+        type: "GET", 
+        success: function(response) {
+            console.log(response);
+            $("#data-table table tr:not(#header)").remove();
+            var statusArray = response.status;
+
+            var table = $('#data-table table');
+
+            for (var i = 0; i < statusArray.length; i++) {
+                var newRow = $('<tr>');
+
+                var idCell = $('<td>').text(statusArray[i].id);
+                var hourCell = $('<td>').text(statusArray[i].hour);
+                var minuteCell = $('<td>').text(statusArray[i].minute);
+                var am_pmCell = $('<td>').text(statusArray[i].am_pm);
+                var priceCell = $('<td>').text(statusArray[i].price);
+
+                newRow.append(idCell, hourCell, minuteCell, am_pmCell, priceCell);
+
+                table.append(newRow);
+            }
+
+            $('#data-table').fadeIn(1000);
+        },
+        error: function(xhr, status, error) {
+            console.error(error);
+            alert("Current User Data Lost Or Empty!")
+        }
+    });
+}
+
+
+            function Booked() {
+            var myDiv = $('#container');
+
+            myDiv.fadeOut();
+
+            $.ajax({
+              url: "/getData",
+              type: "POST",
+              data: "dummydata",
+              success: function(response) {
+                console.log(response);
+
+                $("#data-table table tr:not(#header)").remove();
+                var responseObject = JSON.parse(response);
+
+                var statusString = responseObject.status;
+
+                statusString = statusString.replace("(", "").replace(")", "");
+
+                var statusArray = statusString.split(",").map(function(item) {
+                  return item.trim().replace(/'/g, '');
+                });
+
+                var table = $('#data-table table');
+
+                var newRow = $('<tr>');
+
+                for (var i = 0; i < statusArray.length; i++) {
+                    var newCell = $('<td>');
+
+                    newCell.text(statusArray[i]);
+
+                    newRow.append(newCell);
+                }
+
+                table.append(newRow);
+
+                $('#data-table').fadeIn(1000);
+              },
+              error: function(xhr, status, error) {
+                console.error(error);
+                alert("Please Enter To See 'Your Data'!");
+                                var myDiv = $('#data-table');
+
+                myDiv.fadeOut();
+                $("#container").fadeIn(1000);
+
+              }
+            });
+
+
+}
+            function back(){
+                var myDiv = $('#data-table');
+
+                myDiv.fadeOut();
+                $("#container").fadeIn(1000);
+
+
+
+            }
+            function cancel() {
+                $("#hour").prop("disabled", false);
+                $("#minute").prop("disabled", false);
+                $("#am_pm").prop("disabled", false);
+
+                // Reset form and hide expense
+                document.getElementById("hour").value = "";
+                document.getElementById("minute").value = "";
+                document.getElementById("am_pm").value = "AM";
+                document.getElementById("expense-msg").style.display = "none";
+                document.getElementById("cancelBtn").style.display = "none";
+                document.getElementById("printBtn").style.display = "none";
+                document.getElementById("submitBtn").style.display = "inline-block";
+                document.getElementById("seeMy").style.display = "inline-block";
+
+            }
+
+            $(document).ready(function() {
+              $("#printBtn").on("click", function() {
+                var hour = $("#hour").val();
+                var minute = $("#minute").val();
+                var am_pm = $("#am_pm").val();
+                var price = $("#expense-msg").text();
+
+                var formData = {
+                  hour: hour,
+                  minute: minute,
+                  am_pm: am_pm,
+                  price: price,
+                };
+
+                $.ajax({
+                  url: "/submit",
+                  type: "POST",
+                  data: formData,
+                  success: function(response) {
+                    console.log(response);
+                    $("#hour").prop("disabled", false);
+                    $("#minute").prop("disabled", false);
+                    $("#am_pm").prop("disabled", false);
+
+                    document.getElementById("hour").value = "";
+                    document.getElementById("minute").value = "";
+                    document.getElementById("am_pm").value = "AM";
+                    document.getElementById("expense-msg").style.display = "none";
+                    document.getElementById("cancelBtn").style.display = "none";
+                    document.getElementById("printBtn").style.display = "none";
+                    document.getElementById("submitBtn").style.display = "inline-block";
+                    document.getElementById("seeMy").style.display = "inline-block";
+                    document.getElementById("all").style.display = "inline-block";
+
+                    alert("You have successfully booked your place!");
+
+                  },
+                  error: function(xhr, status, error) {
+                    console.error(error);
+                  }
+                });
+              });
+            });
+
+        </script>
+</body>
+</html>
